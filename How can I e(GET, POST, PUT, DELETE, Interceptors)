@@ -1,0 +1,158 @@
+Great! Let’s prepare a clean, super-easy and interview-ready explanation for the topic:
+
+> "HTTP Client in Angular (GET, POST, PUT, DELETE, Interceptors)"
+
+
+
+
+---
+
+✅ First: What is HttpClient?
+
+> Angular provides the HttpClient service to send HTTP requests to a backend server (like .NET API) — just like a browser talks to a website.
+
+
+
+👉 We use HttpClient to get data, send data, update data, or delete data from a server.
+
+You need to import it:
+
+import { HttpClient } from '@angular/common/http';
+
+Inject it in your constructor:
+
+constructor(private http: HttpClient) { }
+
+
+---
+
+✅ 1. GET – Fetch Data
+
+> Example: Get list of users from the API
+
+
+
+this.http.get('https://api.example.com/users')
+  .subscribe(data => console.log(data));
+
+
+---
+
+✅ 2. POST – Create/Add Data
+
+> Example: Add a new user
+
+
+
+const user = { name: 'John', age: 30 };
+
+this.http.post('https://api.example.com/users', user)
+  .subscribe(response => console.log(response));
+
+
+---
+
+✅ 3. PUT – Update Entire Data
+
+> Example: Update a user completely
+
+
+
+const updatedUser = { id: 1, name: 'John', age: 35 };
+
+this.http.put('https://api.example.com/users/1', updatedUser)
+  .subscribe(response => console.log(response));
+
+
+---
+
+✅ 4. DELETE – Delete Data
+
+> Example: Delete a user by ID
+
+
+
+this.http.delete('https://api.example.com/users/1')
+  .subscribe(response => console.log(response));
+
+
+---
+
+✅ 5. Interceptors – Middleware for Requests
+
+> Interceptors are like security guards that run before/after any HTTP call.
+
+
+
+✅ Use Case:
+
+Automatically attach JWT token
+
+Show loading spinner
+
+Handle global errors
+
+
+👉 Create an Interceptor:
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    const token = localStorage.getItem('token');
+    const authReq = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` }
+    });
+    return next.handle(authReq);
+  }
+}
+
+👉 Register it in app.module.ts:
+
+providers: [
+  {
+    provide: HTTP_INTERCEPTORS,
+    useClass: AuthInterceptor,
+    multi: true
+  }
+]
+
+
+---
+
+✅ Interview Summary (Easy Lines):
+
+HTTP Method	Use For
+
+GET	Getting data (read)
+POST	Sending new data
+PUT	Updating existing data
+DELETE	Removing data
+
+
+➡️ Interceptors: Used to modify requests globally — like adding headers, logging, error handling.
+
+
+---
+
+✅ Real-life Analogy (for interviews):
+
+> Think of HttpClient like a delivery service:
+
+
+
+GET: You request a pizza 🍕
+
+POST: You send a new order
+
+PUT: You update your order (change size)
+
+DELETE: You cancel your order
+
+Interceptor: Like a manager who checks all orders before they go out.
+
+
+
+---
+
+Would you like mock interview Q&A for this topic to practice more confidently?
+
