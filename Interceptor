@@ -1,0 +1,6 @@
+/////////////////////////////What 
+Interceptor used to modify and request and response. It will add JWT Token in the header.
+
+//How we use in Project
+when we request send to backend Authorization header with JWT token addded in request.
+
