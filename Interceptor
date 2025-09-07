@@ -3,4 +3,334 @@ Interceptor used to modify and request and response. It will add JWT Token in th
 
 //How we use in Project
 when we request send to backend Authorization header with JWT token addded in request.
+when we get response fron Api , if the token is expire(401 Unauthorized), we needed to redirected thr user to the login page.
+
+//Request is Modified
+Here , I am tacking the origin request(req) and making a copying using req.clone().
+Why? Because Angular requests are immutable(cannot br changed directly) . so we clone it add the Authorization header, passs it foreware.
+ Where Request Is Modified
+
+let authReq = req;
+if (token) {
+  authReq = req.clone({
+    setHeaders: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+//Where Response s Modified/Handled
+Here , I am intercept the response.
+if it's the error(401 Unaurarised), I modify the flow by redirecting the user to login.
+ Where Response Is Modified/Handled
+
+return next.handle(authReq).pipe(
+  catchError((error: HttpErrorResponse) => {
+    if (error.status === 401) {
+      this.router.navigate(['/login']);
+    }
+    return throwError(() => error);
+  })
+);
+
+
+//Add Business Thinking (The Magic Sauce ✨)
+
+“In real projects, I used this concept to optimize performance and maintain consistency.
+For example, in a property buy/sell application, instead of writing duplicate code in every service for handling 401 Unauthorized, I handled it once in the interceptor. 
+This reduced code duplication by 30% and made the system more reliable — if the token expired, users were redirected automatically to login without breaking their session.”
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////Complete Implementation
+Perfect 🚀 This is one of the most common Angular interview questions.
+Let’s go step by step — I’ll explain when I used interceptor in my project, then show you code.
+
+
+---
+
+🔹 When I Used Interceptor
+
+In my Property Buy & Sell application, we had:
+
+JWT Authentication: Every API call needed an Authorization header with a JWT token.
+
+Error Handling: If the token expired (401 Unauthorized), we needed to redirect the user to the login page.
+
+Loading Indicator: Show a loader when an API request started, and hide it when it finished.
+
+
+👉 For this, we implemented Angular HTTP Interceptors.
+
+
+---
+
+🔹 Interceptor Implementation
+
+1. Create Interceptor File
+
+ng generate interceptor auth
+
+This creates auth.interceptor.ts.
+
+
+---
+
+2. Add Logic Inside Interceptor
+
+import { Injectable } from '@angular/core';
+import {
+  HttpEvent,
+  HttpHandler,
+  HttpInterceptor,
+  HttpRequest,
+  HttpErrorResponse
+} from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+
+  constructor(private router: Router) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    // ✅ Step 1: Get token from localStorage
+    const token = localStorage.getItem('jwtToken');
+
+    // ✅ Step 2: Clone request and add Authorization header
+    let authReq = req;
+    if (token) {
+      authReq = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+
+    // ✅ Step 3: Handle errors (like token expired)
+    return next.handle(authReq).pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 401) {
+          // Redirect to login if token expired
+          this.router.navigate(['/login']);
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+}
+
+
+---
+
+3. Register Interceptor in app.module.ts
+
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { AuthInterceptor } from './auth.interceptor';
+
+@NgModule({
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true // ✅ important because Angular can have multiple interceptors
+    }
+  ]
+})
+export class AppModule {}
+
+
+---
+
+🔹 How It Works in the Project
+
+Whenever you make an HTTP request with HttpClient (GET, POST, PUT, DELETE),
+Angular automatically passes it through the interceptor.
+
+The interceptor adds the JWT token in headers.
+
+If the backend returns 401 Unauthorized, interceptor catches it and redirects to login.
+
+No need to repeat token handling in every service.
+
+
+
+---
+
+✅ Interview-Friendly Answer (Short & Clear):
+"In my Angular project, I used interceptors mainly for attaching JWT tokens to every API call, handling errors like expired tokens, and sometimes showing loaders during API requests. For example, in our Property Buy & Sell app, the interceptor added the Authorization header with the token automatically, and if a 401 error occurred, it redirected users to the login page. This made the code clean and avoided repeating token logic in every service."
+
+
+---
+
+👉 Do you want me to also show you how I used interceptor for showing loader/spinner in Angular (another common follow-up in interviews)?
+
+
+
+Great question 👍 — this shows you’re thinking deeply (exactly what interviewers like).
+
+In the interceptor code I shared, both request and response are being modified/handled. Let’s break it down:
+
+
+---
+
+🔹 Where Request Is Modified
+
+let authReq = req;
+if (token) {
+  authReq = req.clone({
+    setHeaders: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+}
+
+👉 Here, I’m taking the original request (req) and making a copy using req.clone().
+Why? Because Angular requests are immutable (cannot be changed directly).
+So we clone it, add the Authorization header, and pass it forward.
+
+✅ This is where the request is modified.
+
+
+---
+
+🔹 Where Response Is Modified/Handled
+
+return next.handle(authReq).pipe(
+  catchError((error: HttpErrorResponse) => {
+    if (error.status === 401) {
+      this.router.navigate(['/login']);
+    }
+    return throwError(() => error);
+  })
+);
+
+👉 Here, I’m intercepting the response.
+
+If it’s an error (401 Unauthorized), I modify the flow by redirecting the user to login.
+
+Otherwise, I just pass the response/error back to the caller.
+
+
+✅ This is where the response is handled.
+
+
+---
+
+🔹 Simple Way to Say in Interview
+
+“In my interceptor, I modified the request by cloning it and adding the JWT token in headers.
+For the response, I handled errors like 401 Unauthorized and redirected users to login.
+So, interceptors let me modify both requests and responses in one central place.”
+
+
+
+---
+
+👉 Do you want me to also show an example where we modify the response data itself (not just error handling), like formatting API results before they reach the component?
+
+///////////////////////////////////////////////////////////////////Cross Question
+Cross Questions / Scenario-Based Questions
+
+1. Basic Concept
+👉 “What is the difference between Interceptor and Middleware?”
+👉 “Why would you use an interceptor instead of handling headers inside services?”
+
+
+
+
+---
+
+2. JWT Token Handling
+👉 “How would you attach a JWT token to every request using an interceptor?”
+👉 “What if the token expires in the middle of an API call — how would you handle refreshing it in the interceptor?”
+
+
+
+
+---
+
+3. Error Handling
+👉 “How would you handle 401 Unauthorized globally with interceptors?”
+👉 “Can you retry a failed API request automatically using an interceptor? How?”
+
+
+
+
+---
+
+4. Performance / Business Scenario
+👉 “Suppose your app makes 100 API calls at once, can interceptors slow down performance?”
+👉 “How did you optimize API calls using interceptors in your project?”
+
+
+
+
+---
+
+5. Request Modification
+👉 “Can you modify request headers dynamically based on conditions (e.g., different API keys for staging vs production)?”
+👉 “What if you only want to add headers for some APIs but not for others?”
+
+
+
+
+---
+
+6. Response Handling
+👉 “How would you log every response globally without writing console.log in each service?”
+👉 “What if you get a standard error response object from the backend ({errorCode, message}), how would you transform it into user-friendly messages using an interceptor?”
+
+
+
+
+---
+
+7. Multiple Interceptors
+👉 “What happens if you have multiple interceptors? In which order do they run?”
+👉 “Can you control the execution order of interceptors?”
+
+
+
+
+---
+
+8. Real-Life Scenario
+👉 “In your project, how did using interceptors save time or improve maintainability?”
+👉 “Can you give a business example where interceptor made the app more reliable?”
+
+
+
+
+---
+
+✅ Pro Tip for Interviews:
+Always use the STAR method:
+
+Situation: “We had to add JWT tokens for every request.”
+
+Task: “Manually adding was repetitive.”
+
+Action: “I used an interceptor to attach tokens globally and handle expired ones.”
+
+Result: “This reduced code duplication by 40% and improved security.”
+
+
+
+
+
+
 
